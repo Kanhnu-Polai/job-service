@@ -15,7 +15,6 @@ import com.skillverify.jobservice.dto.JobDto;
 import com.skillverify.jobservice.dto.JobUpdationDto;
 import com.skillverify.jobservice.entity.Job;
 import com.skillverify.jobservice.exception.FailedToCallJobManagerServiceException;
-import com.skillverify.jobservice.exception.InvalidJobIdException;
 import com.skillverify.jobservice.exception.JobNotFoundException;
 import com.skillverify.jobservice.exception.PublisherEmailOrIdMissingExeption;
 import com.skillverify.jobservice.http.JobServiceHttpEngine;
@@ -79,10 +78,11 @@ public class JobServiceImpl implements JobService {
 				.build();
 		
 		// Call to external service to add job
+		
 		try {
 			jobServiceHttpEngine.makeCallToJobApplicationServiceToAddJob(jobDto);
 		} catch (Exception e) {
-			log.error("Error calling job application service: {}", e.getMessage());
+			log.error("❌ Error calling job application service: {}", e.getMessage());
 			throw new FailedToCallJobManagerServiceException(ErrorCodeEnum.FAILED_TO_CALL_JOB_MANAGER_SERVICE);
 		}
 		
@@ -95,15 +95,9 @@ public class JobServiceImpl implements JobService {
 	public boolean deleteJob(UUID jobId, String publisherEmail) {
 	    log.info("JobServiceImpl -> deleteJob() called with jobId: {} and publisherEmail: {}", jobId, publisherEmail);
 
-	    if (publisherEmail == null || publisherEmail.isBlank()) {
-	        log.error("Publisher email is missing");
-	        throw new PublisherEmailOrIdMissingExeption(ErrorCodeEnum.PUBLISHER_EMAIL_OR_ID_MISSING);
-	        }
+	    
 
-	    if (jobId == null) {
-	        log.error("Job ID is missing");
-	        throw new InvalidJobIdException(ErrorCodeEnum.INVALID_JOB_ID);
-	    }
+	   
 
 	  
 	    Optional<Job> jobOptional = jobRepository.findById(jobId);
