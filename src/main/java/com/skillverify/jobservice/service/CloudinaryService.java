@@ -1,12 +1,19 @@
 package com.skillverify.jobservice.service;
 
+import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.cloudinary.Cloudinary;
+import com.cloudinary.api.exceptions.ApiException;
 import com.cloudinary.utils.ObjectUtils;
+import com.skillverify.jobservice.contants.ErrorCodeEnum;
+import com.skillverify.jobservice.dto.UploadResponse;
+import com.skillverify.jobservice.exception.CloudinaryUploadException;
+import com.skillverify.jobservice.exception.FileReadException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,21 +25,33 @@ public class CloudinaryService {
 
 	private final Cloudinary cloudinary;
 
-	public Map<String, String> uploadCompanyLogo(MultipartFile file, String folder) {
+	
+	@SuppressWarnings("unchecked")
+	public UploadResponse uploadCompanyLogo(MultipartFile file, String folder) {
 		try {
+			if (file == null || file.isEmpty()) {
+				throw new IllegalArgumentException("❌ File must not be null or empty");
+			}
+
 			String resourceType = detectResourceType(file);
 
-			Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+			Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(),
 					ObjectUtils.asMap("folder", folder, "resource_type", resourceType, "access_mode", "public"));
 
-			log.info("Upload result from Cloudinary: {}", uploadResult);
+			String url = Objects.toString(uploadResult.get("secure_url"), "");
+			String publicId = Objects.toString(uploadResult.get("public_id"), "");
 
-			return Map.of("url", uploadResult.get("secure_url").toString(), // ✅ HTTPS secure URL
-					"public_id", uploadResult.get("public_id").toString());
+			log.info("✅ Upload Successful: public_id={}, url={}", publicId, url);
+
+			return new UploadResponse(url, publicId);
+
+		} catch (IOException e) {
+			log.error("❌ File read error during Cloudinary upload: {}", e.getMessage(), e);
+			throw new FileReadException(ErrorCodeEnum.FILE_READ_ERROR);
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to upload file: " + e.getMessage(), e);
+			log.error("❌ Failed to upload file to Cloudinary: {}", e.getMessage(), e);
+			throw new CloudinaryUploadException(ErrorCodeEnum.CLOUDINARY_UPLOAD_FAILED);
 		}
-
 	}
 
 	public String deleteFile(String publicId) {

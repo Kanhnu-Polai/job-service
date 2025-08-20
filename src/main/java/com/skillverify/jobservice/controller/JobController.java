@@ -3,6 +3,7 @@ package com.skillverify.jobservice.controller;
 import com.skillverify.jobservice.contants.ErrorCodeEnum;
 import com.skillverify.jobservice.dto.JobCreationDto;
 import com.skillverify.jobservice.dto.JobUpdationDto;
+import com.skillverify.jobservice.dto.UploadResponse;
 import com.skillverify.jobservice.entity.Job;
 import com.skillverify.jobservice.exception.*;
 import com.skillverify.jobservice.service.CloudinaryService;
@@ -38,19 +39,20 @@ public class JobController {
 		log.info("✅️ Request for create a new job with job title {}", jobCreateDto.getJobTitle());
 
 		Instant start = Instant.now();
-		Map<String, String> upload;
+		UploadResponse upload;
 		try {
-			upload = cloudinaryService.uploadCompanyLogo(companyPhoto, "company_photos");
+			log.info("✅️ Sending company logo to Cloudinary for upload for job title: {} ", jobCreateDto.getJobTitle());
+			upload= cloudinaryService.uploadCompanyLogo(companyPhoto, "company_photos");
 		} catch (Exception ex) {
-			log.error("[CREATE] Cloudinary upload failed", ex);
+			log.error("❌ Cloudinary upload failed ", ex);
 			throw new CompanyLogoFailedException(ErrorCodeEnum.COMPANY_LOGO_UPLOAD_FAILED);
 		}
 		long ms = Duration.between(start, Instant.now()).toMillis();
-		log.debug("[CREATE] Cloudinary upload ✔  {} ms,  URL={}", ms, upload.get("url"));
+		log.info("✅️ Cloudinary takes  {} ms, to upload the comapny logo with url {}", ms, upload.url());
 
 		// 3) Enrich DTO & persist --------------------------------------------
-		jobCreateDto.setCompanyPhotoLink(upload.get("url"));
-		jobCreateDto.setPublicPhotoId(upload.get("public_id"));
+		jobCreateDto.setCompanyPhotoLink(upload.url());
+		jobCreateDto.setPublicPhotoId(upload.publicId());
 
 		Job saved = jobService.createJob(jobCreateDto);
 		log.info("[CREATE] ✅  jobId={} publisher={}", saved.getJobId(), saved.getPublisherEmail());

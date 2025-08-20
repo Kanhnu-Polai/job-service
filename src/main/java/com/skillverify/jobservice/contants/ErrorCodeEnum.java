@@ -11,7 +11,9 @@ public enum ErrorCodeEnum {
 	
 	COMPANY_LOGO_UPLOAD_FAILED("JOB_SERVICE_70003","Company logo upload failed"), 
 	
-	FAILED_TO_CALL_JOB_MANAGER_SERVICE("JOB_SERVICE_70004","Failed to call Job Manager Service"),;
+	FAILED_TO_CALL_JOB_MANAGER_SERVICE("JOB_SERVICE_70004","Failed to call Job Manager Service"),
+	FILE_READ_ERROR("JOB_SERVICE_70005","File read error during Cloudinary upload"),
+	CLOUDINARY_UPLOAD_FAILED("JOB_SERVICE_70006","Failed to upload file to Cloudinary"),;
 	
 
 	private final String message;
